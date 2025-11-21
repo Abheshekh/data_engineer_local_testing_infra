@@ -2,4 +2,3 @@
 Using the docker, Let test pyspark on local.
 This project contains:
     Jupyter Notebook
-    asd
