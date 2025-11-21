@@ -30,7 +30,7 @@ run:
 	CONTAINER_TIMESTAMP=$(CONTAINER_TIMESTAMP) docker-compose up -d
 	@echo "Containers started successfully!"
 	@echo "Jupyter Notebook: http://localhost:10000"
-	@echo "MongoDB: localhost:27017"x
+	@echo "MongoDB: localhost:27017"
 
 delete:
 	@echo "Deleting containers with name pattern: $(CONTAINER_NAME)"

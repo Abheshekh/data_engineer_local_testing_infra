@@ -1,0 +1,13 @@
+volumes/
+.git
+.gitignore
+.vscode
+*.md
+env
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+

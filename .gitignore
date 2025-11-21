@@ -1,2 +1,5 @@
 /volumes
 /.vscode
+env
+.env
+*.log
