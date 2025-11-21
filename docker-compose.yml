@@ -1,0 +1,83 @@
+version: "3"
+
+services:
+  pyspark-notebook:
+    build: .
+    container_name: pyspark-notebook-container-${CONTAINER_TIMESTAMP}
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+    ports:
+      - "10000:8888"
+      - "4040:4040"
+      - "4041:4041"
+    volumes:
+      - pyspark-notebook-volume:/home/jovyan/work
+      - s3-volume:/tmp/localstack
+      - delta-volume:/home/jovyan/delta
+    depends_on:
+      - mongodb
+      - localstack
+    networks:
+      - app-network
+
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"  # LocalStack S3 port
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - PERSISTENCE=1
+      - DATA_DIR=/var/lib/localstack
+      - SERVICES=s3,ssm,lambda
+      - LAMBDA_EXECUTOR=docker
+      - DEBUG=1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - s3-volume:/var/lib/localstack
+    networks:
+      - app-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb-${CONTAINER_TIMESTAMP}
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=PASSWORD
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-volume:/data/db
+    networks:
+      - app-network
+
+volumes:
+  pyspark-notebook-volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/pyspark
+  s3-volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/s3
+  delta-volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/delta
+  mongodb-volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volumes/mongodb
+
+networks:
+  app-network:
+    driver: bridge
