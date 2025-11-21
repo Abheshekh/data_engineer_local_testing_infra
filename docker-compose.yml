@@ -14,7 +14,6 @@ services:
       - "4041:4041"
     volumes:
       - pyspark-notebook-volume:/home/jovyan/work
-      - s3-volume:/tmp/localstack
       - delta-volume:/home/jovyan/delta
     depends_on:
       - mongodb

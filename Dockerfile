@@ -86,10 +86,6 @@ rm -f *.jar
 COPY requirements.txt "/tmp/"
 RUN pip install -r /tmp/requirements.txt
 
-# Create Delta Lake directories
-RUN mkdir -p /tmp/delta-table /tmp/spark-delta-table /tmp/owners_table && \
-    chmod 755 /tmp/delta-table /tmp/spark-delta-table /tmp/owners_table
-
 USER ${NB_UID}
 
 # Install pyarrow via pip
