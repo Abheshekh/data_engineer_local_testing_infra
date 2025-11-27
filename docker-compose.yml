@@ -1,13 +1,11 @@
-version: "3"
-
 services:
   pyspark-notebook:
     build: .
-    container_name: pyspark-notebook-container-${CONTAINER_TIMESTAMP}
+    container_name: pyspark-notebook-container-${CONTAINER_TIMESTAMP:-default}
     environment:
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-test}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-test}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-west-2}
     ports:
       - "10000:8888"
       - "4040:4040"
@@ -15,13 +13,11 @@ services:
     volumes:
       - pyspark-notebook-volume:/home/jovyan/work
       - delta-volume:/home/jovyan/delta
-    depends_on:
-      - mongodb
-      - localstack
     networks:
       - app-network
 
   localstack:
+    profiles: [full-stack]
     image: localstack/localstack:latest
     ports:
       - "4566:4566"  # LocalStack S3 port
@@ -39,8 +35,9 @@ services:
       - app-network
 
   mongodb:
+    profiles: [full-stack]
     image: mongo:latest
-    container_name: mongodb-${CONTAINER_TIMESTAMP}
+    container_name: mongodb-${CONTAINER_TIMESTAMP:-default}
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=PASSWORD
