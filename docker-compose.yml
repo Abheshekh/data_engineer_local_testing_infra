@@ -28,6 +28,7 @@ services:
       - SERVICES=s3,ssm,lambda
       - LAMBDA_EXECUTOR=docker
       - DEBUG=1
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - s3-volume:/var/lib/localstack
@@ -54,25 +55,25 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ./volumes/pyspark
+      device: ${NOTEBOOK_WORK_PATH}
   s3-volume:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ./volumes/s3
+      device: ${VOLUMES_BASE_PATH}/s3
   delta-volume:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ./volumes/delta
+      device: ${VOLUMES_BASE_PATH}/delta
   mongodb-volume:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ./volumes/mongodb
+      device: ${VOLUMES_BASE_PATH}/mongodb
 
 networks:
   app-network:

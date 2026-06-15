@@ -35,7 +35,7 @@ WORKDIR /tmp
 RUN wget -q --no-check-certificate "https://archive.apache.org/dist/spark/spark-${APACHE_SPARK_VERSION}/spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" && tar xzf "spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" -C /usr/local --owner root --group root --no-same-owner && \
     rm "spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz"
 
-RUN wget -q --no-check-certificate "https://downloads.lightbend.com/scala/$SCALA_VERSION/scala-$SCALA_VERSION.tgz" && \
+RUN wget -q "https://www.scala-lang.org/files/archive/scala-$SCALA_VERSION.tgz" && \
   tar xzf scala-$SCALA_VERSION.tgz -C /tmp/ && \
   mkdir /usr/local/scala-$SCALA_VERSION && \
   mv /tmp/scala-$SCALA_VERSION/* /usr/local/scala-$SCALA_VERSION && \
