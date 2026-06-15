@@ -36,10 +36,11 @@ RUN wget -q --no-check-certificate "https://archive.apache.org/dist/spark/spark-
     rm "spark-${APACHE_SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz"
 
 RUN wget -q "https://www.scala-lang.org/files/archive/scala-$SCALA_VERSION.tgz" && \
-  tar xzf scala-$SCALA_VERSION.tgz -C /tmp/ && \
-  mkdir /usr/local/scala-$SCALA_VERSION && \
-  mv /tmp/scala-$SCALA_VERSION/* /usr/local/scala-$SCALA_VERSION && \
-  rm -rf scala-$SCALA_VERSION.tgz 
+    tar xzf scala-$SCALA_VERSION.tgz -C /tmp/ && \
+    mkdir /usr/local/scala-$SCALA_VERSION && \
+    mv /tmp/scala-$SCALA_VERSION/* /usr/local/scala-$SCALA_VERSION && \
+    rm -rf scala-$SCALA_VERSION.tgz
+
 ENV SCALA_HOME=/usr/local/scala-$SCALA_VERSION/bin
 
 WORKDIR /usr/local
@@ -67,28 +68,21 @@ RUN curl -L -o aws-java-sdk-bundle-1.12.565.jar "https://repo1.maven.org/maven2/
     mv *.jar /usr/local/spark/jars/ && \
     rm -f *.jar
 
-    # Download Delta Lake JARs (compatible with Spark 3.5.2 and Scala 2.12)
+# Download Delta Lake JARs (compatible with Spark 3.4 and Scala 2.12)
 RUN curl -L -o delta-core_2.12-2.4.0.jar "https://repo1.maven.org/maven2/io/delta/delta-core_2.12/2.4.0/delta-core_2.12-2.4.0.jar" && \
-curl -L -o delta-storage-2.4.0.jar "https://repo1.maven.org/maven2/io/delta/delta-storage/2.4.0/delta-storage-2.4.0.jar" && \
-mv *.jar /usr/local/spark/jars/ && \
-rm -f *.jar
-
-# Download required JARs directly from Maven Central using curl
-# RUN curl -o /opt/spark/jars/hadoop-aws-3.2.0.jar \
-#     https://repo.maven.apache.org/maven2/org/apache/hadoop/hadoop-aws/3.2.0/hadoop-aws-3.2.0.jar \
-#     && curl -o /opt/spark/jars/aws-java-sdk-bundle-1.11.375.jar \
-#     https://repo.maven.apache.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.11.375/aws-java-sdk-bundle-1.11.375.jar \
-#     && curl -o /opt/spark/jars/hadoop-common-3.2.0.jar \
-#     https://repo.maven.apache.org/maven2/org/apache/hadoop/hadoop-common/3.2.0/hadoop-common-3.2.0.jar
-
+    curl -L -o delta-storage-2.4.0.jar "https://repo1.maven.org/maven2/io/delta/delta-storage/2.4.0/delta-storage-2.4.0.jar" && \
+    mv *.jar /usr/local/spark/jars/ && \
+    rm -f *.jar
 
 # Python packages installation
 COPY requirements.txt "/tmp/"
 RUN pip install -r /tmp/requirements.txt
 
-USER ${NB_UID}
+# Enable Spark event logging to the mounted pyspark-events volume
+RUN mkdir -p "${SPARK_HOME}/conf" && \
+    printf "spark.eventLog.enabled=true\nspark.eventLog.dir=/home/jovyan/pyspark-events\n" \
+    >> "${SPARK_HOME}/conf/spark-defaults.conf"
 
-# Install pyarrow via pip
-RUN pip install pyarrow
+USER ${NB_UID}
 
 WORKDIR "${HOME}"

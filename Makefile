@@ -1,17 +1,18 @@
 # Default container name if not provided
-CONTAINER_NAME ?= 3.4.0
+CONTAINER_NAME ?= dev
 
 # Generate timestamp in YYYY-MM-DD-HH-MM-SS format
 TIMESTAMP := $(shell date +%Y-%m-%d-%H-%M-%S)
 CONTAINER_TIMESTAMP := $(CONTAINER_NAME)-$(TIMESTAMP)
 
-.PHONY: build run delete build-notebook run-notebook setup check-env help
+.PHONY: build run stop delete build-notebook run-notebook setup check-env help
 
 help:
 	@echo "Available commands:"
 	@echo "  make setup                         - Copy env.example to .env (skips if .env exists)"
 	@echo "  make build                         - Build Docker images"
 	@echo "  make run CONTAINER_NAME=<name>     - Run ALL services (notebook + mongodb + localstack)"
+	@echo "  make stop                          - Stop all running containers"
 	@echo "  make build-notebook                - Build and start ONLY pyspark-notebook (no dependencies)"
 	@echo "  make run-notebook                  - Start ONLY pyspark-notebook (no build, no dependencies)"
 	@echo "  make delete CONTAINER_NAME=<name>  - Delete containers by name pattern"
@@ -41,11 +42,11 @@ setup:
 		mkdir -p "$$val"; \
 		echo "  -> NOTEBOOK_WORK_PATH=$$val"; \
 	fi
-	@printf "\nVolumes base path — s3/, delta/, mongodb/ will be created inside it\n(e.g. $(HOME)/Documents/volumes)\n> "; \
+	@printf "\nVolumes base path — s3/, delta/, mongodb/, pyspark/ will be created inside it\n(e.g. $(HOME)/Documents/volumes)\n> "; \
 	read val; \
 	if [ -n "$$val" ]; then \
 		sed -i '' "s|VOLUMES_BASE_PATH=.*|VOLUMES_BASE_PATH=$$val|" .env; \
-		mkdir -p "$$val/s3" "$$val/delta" "$$val/mongodb"; \
+		mkdir -p "$$val/s3" "$$val/delta" "$$val/mongodb" "$$val/pyspark"; \
 		echo "  -> VOLUMES_BASE_PATH=$$val"; \
 	fi
 	@echo ""
@@ -77,35 +78,40 @@ check-env:
 
 build:
 	@echo "Building Docker images..."
-	docker-compose build
+	docker compose build
 
 run: check-env
 	@echo "Running containers with name: $(CONTAINER_TIMESTAMP)"
 	@echo "Checking for existing containers..."
-	@VOLUMES_BASE_PATH=$$(grep '^VOLUMES_BASE_PATH=' .env | cut -d= -f2); \
-	NOTEBOOK_WORK_PATH=$$(grep '^NOTEBOOK_WORK_PATH=' .env | cut -d= -f2); \
-	mkdir -p "$$NOTEBOOK_WORK_PATH" "$$VOLUMES_BASE_PATH/s3" "$$VOLUMES_BASE_PATH/delta" "$$VOLUMES_BASE_PATH/mongodb"
+	@VOLUMES_BASE_PATH=$$(grep '^VOLUMES_BASE_PATH=' .env | cut -d= -f2-); \
+	NOTEBOOK_WORK_PATH=$$(grep '^NOTEBOOK_WORK_PATH=' .env | cut -d= -f2-); \
+	mkdir -p "$$NOTEBOOK_WORK_PATH" "$$VOLUMES_BASE_PATH/s3" "$$VOLUMES_BASE_PATH/delta" "$$VOLUMES_BASE_PATH/mongodb" "$$VOLUMES_BASE_PATH/pyspark"
 	@docker ps -a --filter "name=pyspark-notebook-container-$(CONTAINER_NAME)" --format "{{.Names}}" | xargs -r docker rm -f
 	@docker ps -a --filter "name=mongodb-$(CONTAINER_NAME)" --format "{{.Names}}" | xargs -r docker rm -f
 	@echo "Starting new containers..."
-	CONTAINER_TIMESTAMP=$(CONTAINER_TIMESTAMP) docker-compose --profile full-stack up -d
+	CONTAINER_TIMESTAMP=$(CONTAINER_TIMESTAMP) docker compose --profile full-stack up -d
 	@echo "Containers started successfully!"
 	@echo "Jupyter Notebook: http://localhost:10000"
 	@echo "MongoDB: localhost:27017"
 
+stop:
+	@echo "Stopping containers..."
+	docker compose --profile full-stack stop
+	@echo "Containers stopped. Run 'make run CONTAINER_NAME=<name>' to restart."
+
 build-notebook: check-env
 	@echo "Building and starting pyspark-notebook service (no dependencies)..."
-	@NOTEBOOK_WORK_PATH=$$(grep '^NOTEBOOK_WORK_PATH=' .env | cut -d= -f2); \
-	VOLUMES_BASE_PATH=$$(grep '^VOLUMES_BASE_PATH=' .env | cut -d= -f2); \
-	mkdir -p "$$NOTEBOOK_WORK_PATH" "$$VOLUMES_BASE_PATH/delta"
-	CONTAINER_TIMESTAMP=$(CONTAINER_TIMESTAMP) docker compose -f 'docker-compose.yml' up -d --build 'pyspark-notebook'
+	@NOTEBOOK_WORK_PATH=$$(grep '^NOTEBOOK_WORK_PATH=' .env | cut -d= -f2-); \
+	VOLUMES_BASE_PATH=$$(grep '^VOLUMES_BASE_PATH=' .env | cut -d= -f2-); \
+	mkdir -p "$$NOTEBOOK_WORK_PATH" "$$VOLUMES_BASE_PATH/delta" "$$VOLUMES_BASE_PATH/pyspark"
+	CONTAINER_TIMESTAMP=$(CONTAINER_TIMESTAMP) docker compose up -d --build pyspark-notebook
 
 run-notebook: check-env
 	@echo "Starting pyspark-notebook service (no dependencies)..."
-	@NOTEBOOK_WORK_PATH=$$(grep '^NOTEBOOK_WORK_PATH=' .env | cut -d= -f2); \
-	VOLUMES_BASE_PATH=$$(grep '^VOLUMES_BASE_PATH=' .env | cut -d= -f2); \
-	mkdir -p "$$NOTEBOOK_WORK_PATH" "$$VOLUMES_BASE_PATH/delta"
-	CONTAINER_TIMESTAMP=$(CONTAINER_TIMESTAMP) docker compose -f 'docker-compose.yml' up -d 'pyspark-notebook'
+	@NOTEBOOK_WORK_PATH=$$(grep '^NOTEBOOK_WORK_PATH=' .env | cut -d= -f2-); \
+	VOLUMES_BASE_PATH=$$(grep '^VOLUMES_BASE_PATH=' .env | cut -d= -f2-); \
+	mkdir -p "$$NOTEBOOK_WORK_PATH" "$$VOLUMES_BASE_PATH/delta" "$$VOLUMES_BASE_PATH/pyspark"
+	CONTAINER_TIMESTAMP=$(CONTAINER_TIMESTAMP) docker compose up -d pyspark-notebook
 
 delete:
 	@echo "Deleting containers with name pattern: $(CONTAINER_NAME)"

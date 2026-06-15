@@ -1,2 +1,3 @@
-localstack
-delta-spark
+delta-spark==2.4.0
+localstack>=3.0
+pyarrow>=12.0.0

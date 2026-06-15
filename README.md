@@ -75,6 +75,7 @@ LocalStack requires an auth token to run. Follow these steps once before your fi
 | `make setup` | Copy `env.example` → `.env` (skips if `.env` already exists) |
 | `make build` | Build Docker images |
 | `make run CONTAINER_NAME=<name>` | Run all services (notebook + mongodb + localstack) |
+| `make stop` | Gracefully stop all running containers |
 | `make build-notebook` | Build and start only pyspark-notebook |
 | `make run-notebook` | Start only pyspark-notebook (no rebuild) |
 | `make delete CONTAINER_NAME=<name>` | Delete containers by name pattern |
@@ -100,35 +101,19 @@ LocalStack requires an auth token to run. Follow these steps once before your fi
 ├── docker-compose.yml    # Service definitions
 ├── Dockerfile            # PySpark notebook image
 ├── Makefile              # Convenience commands
-├── requirements.txt      # Python dependencies
+├── requirements.txt      # Python dependencies (installed inside Docker)
 ├── env.example           # Environment variables template
 └── examples/             # Example notebooks
 ```
 
-## Spark Metrics Configuration
+## Spark Event Logs
 
-The Docker image is configured with comprehensive metrics collection enabled by default.
+Spark event logging is enabled by default. Logs are written to `/home/jovyan/pyspark-events` inside the container and persisted to `${VOLUMES_BASE_PATH}/pyspark` on the host.
 
-### Enabled Metrics
-
-- **Executor Metrics**: CPU, memory, disk I/O, and network metrics per executor
-- **Storage Metrics**: Disk usage, memory usage, and block manager statistics
-- **Cache Metrics**: Cache hits/misses, cache size, and storage levels
-- **Arrow Metrics**: Arrow-based columnar data transfer metrics
-- **Process Tree Metrics**: Detailed CPU and memory metrics per process
-
-### Accessing Metrics
-
-1. **Spark UI** at http://localhost:4040:
-   - **Executors Tab**: CPU, memory, disk, network per executor
-   - **Storage Tab**: Cached RDDs/DataFrames, memory/disk usage
-   - **SQL Tab**: Arrow execution metrics
-   - **Jobs/Stages Tabs**: Task-level metrics
-
-2. **Event Logs**: Stored in `./volumes/pyspark/spark-events/` (persisted via volume)
+View job history in the **Spark UI** at http://localhost:4040 while a session is active.
 
 ## Notes
 
 - Delta tables are stored in `/home/jovyan/delta` inside the container (persisted via volume)
 - LocalStack S3 endpoint for use inside notebooks: `http://localstack:4566`
-- All data volumes are stored in `./volumes/` directory (excluded from git)
+- All data volumes are stored under `${VOLUMES_BASE_PATH}` (excluded from git)
